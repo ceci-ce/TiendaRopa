@@ -39,31 +39,42 @@ function calcularEnvio(subtotal) {
     return subtotal >= CONFIG.envioGratisUmbral ? 0 : CONFIG.costeEnvio;
 };
 
-function generarFactura (clienteData, items) {
-    if (!validarStock(items)) {
-        throw new Error ("Falta de stock en uno o más productos.");
-    }
+function generarFactura(clienteData, items) {
+  // Validamos que haya stock suficiente
+  if (!validarStock(items)) {
+    throw new Error(
+      "Falta de stock en uno o más productos. Revisa el inventario."
+    );
+  }
 
-    const subtotal = calcularSubtotal(items);
-    const stockBajo = items.some((item) => item.stockDisponible < 5);
+  const subtotal = calcularSubtotal(items);
 
-    let descuento = 
+  // 🚨 Nuevo: detectamos si hay stock bajo
+  const stockBajo = items.some((item) => item.stockDisponible < 5);
+
+  // 🚨 Nuevo: detectamos si hay prendas premium (precio > 100€)
+  const prendasPremium = items.filter((item) => item.precio > 100);
+
+  const descuento =
     subtotal > CONFIG.descuentoUmbral
-    ? subtotal * CONFIG.descuentoPorcentaje
-    : 0;
-    const suhtotalConDescuento = subtotal - descuento;
+      ? subtotal * CONFIG.descuentoPorcentaje
+      : 0;
+  const subtotalConDescuento = subtotal - descuento;
 
-    const impuestos = subtotalConDescuento * CONFIG.iva;
-    const gastosEnvios = calcularEnvio(subtotalConDescuento);
+  const impuestos = subtotalConDescuento * CONFIG.iva;
+  const gastosEnvio = calcularEnvio(subtotalConDescuento);
+  const total = subtotalConDescuento + impuestos + gastosEnvio;
 
-    const total = subtotalConDescuento + impuestos + gastosEnvios;
+  const fechaEntrega = dayjs().add(3, "day").format("DD/MM/YYYY");
 
-    const fechaEntrega = dayjs().add(3, "day").format("YYYY-MM-DD");
-    const nombresProductos = items
-    .map((p) => `${p.cantidad}x ${p.nombre}`)
-    .join("\n - ");
+  // Creamos la lista de productos con talla incluida
+  const nombresProductos = items
+    .map(
+      (p) => `${p.cantidad}x ${p.nombre} (Talla: ${p.talla || "M"}) - ${p.precio}€ c/u`
+    )
+    .join("\n  - ");
 
-    return `=========================================
+  return `=========================================
 🌱 TIENDA DE ROPA - FACTURA 🌱
 =========================================
 👤 Cliente: ${clienteData.nombre.toUpperCase()}
@@ -71,7 +82,15 @@ function generarFactura (clienteData, items) {
 
 📦 Productos:
   - ${nombresProductos}
-⚠️ Atención: ${stockBajo ? "¡Stock bajo, compra rápida!" : "Stock suficiente"}
+
+⚠️ Avisos:
+  - ${stockBajo ? "¡Stock bajo en alguna prenda! Compra rápida." : "Stock suficiente"}
+  - ${
+    prendasPremium.length > 0
+      ? "Prenda(s) premium detectada(s): " +
+        prendasPremium.map((p) => p.nombre).join(", ")
+      : "No hay prendas premium"
+  }
 
 --- Desglose ---
 Subtotal: ${subtotal.toFixed(2)}€
