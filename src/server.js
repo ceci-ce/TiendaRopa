@@ -105,3 +105,37 @@ Envío: ${gastosEnvio === 0 ? "GRATIS" : `+${gastosEnvio.toFixed(2)}€`}
 =========================================`;
 }
 
+// ==========================================
+// Rutas de la API
+// ==========================================
+app.use("/api/ropa", ropaRoutes);
+
+app.post("/factura", (req, res) => {
+    try {
+        const cliente = req.body.cliente;
+        const carrito = req.body.carrito;
+
+        if(!cliente || !carrito || !Array.isArray(carrito)) {
+            return res.status(400).json({ error: "Datos de cliente o carrito inválidos" });
+        }
+
+        const reciboTexto = generarFactura(cliente, carrito);
+
+        res.status(200).json({
+            mensaje: "Factura generada exitosamente",
+            ticket: reciboTexto
+        });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+        }
+});
+
+// ==========================================
+// Iniciar servidor
+// ==========================================
+
+app.listen(PORT, () => {
+    console.log(`🚀 Servidor Express escuchando en http://localhost:${PORT}`);
+});
+
+module.exports = app;
