@@ -7,6 +7,10 @@ const ropaRoutes = require("./routes/ropaRoutes");
 const app = express();
 const PORT = 3000;
 
+app.get("/", (req, res) => {
+  res.send("Servidor funcionando 🚀");
+});
+
 // Middleware para JSON y archivos estáticos
 
 app.use(express.json());
@@ -28,7 +32,7 @@ const CONFIG = {
 };
 
 function validarStock(items) {
-    return items.every((item) => item.stockDiponible > item.cantidad);
+    return items.every((item) => item.stockDisponible > item.cantidad);
 };
 
 function calcularSubtotal(items) {
